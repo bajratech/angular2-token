@@ -102,6 +102,11 @@ export class AngularTokenService implements CanActivate {
     const mergedOptions = (<any>Object).assign(defaultOptions, config);
     this.atOptions = mergedOptions;
 
+    if (this.atOptions.apiBase === null) {
+      console.warn(`[angular-token] You have not configured 'apiBase', which may result in security issues. ` +
+                   `Please refer to the documentation at https://github.com/neroniaky/angular2-token/wiki`);
+    }
+
     this.tryLoadAuthData();
   }
 

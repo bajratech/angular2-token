@@ -18,7 +18,7 @@ import { routes } from './app.routes';
     RestrictedModule,
 
     AngularTokenModule.forRoot({
-      apiPath: 'http://localhost:3000',
+      apiBase: 'http://localhost:3000',
     })
   ],
   providers: [

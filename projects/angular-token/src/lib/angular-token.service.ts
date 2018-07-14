@@ -160,9 +160,15 @@ export class AngularTokenService implements CanActivate {
       delete registerData.passwordConfirmation;
     }
 
+    const body = JSON.stringify({
+      [this.atOptions.loginField]: registerData.login,
+      password: registerData.password,
+      password_confirmation: registerData.password_confirmation,
+    });
+
     registerData.confirm_success_url    = this.atOptions.registerAccountCallback;
 
-    return this.http.post(this.getServerPath() + this.atOptions.registerAccountPath, JSON.stringify(registerData));
+    return this.http.post(this.getServerPath() + this.atOptions.registerAccountPath, JSON.stringify(body));
   }
 
   // Delete Account

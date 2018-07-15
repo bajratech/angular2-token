@@ -135,7 +135,7 @@ export class AngularTokenService implements CanActivate {
     }
   }
 
-
+  
   /**
    *
    * Actions
@@ -228,7 +228,6 @@ export class AngularTokenService implements CanActivate {
     this.getAuthDataFromParams();
   }
 
-
   // Sign out request and delete storage
   signOut(): Observable<any> {
     const observ = this.http.delete<any>(this.getServerPath() + this.atOptions.signOutPath)
@@ -250,8 +249,6 @@ export class AngularTokenService implements CanActivate {
 
     return observ;
   }
-
-
 
   // Validate token request
   validateToken(): Observable<any> {
@@ -310,7 +307,6 @@ export class AngularTokenService implements CanActivate {
 
     return this.http.post(this.getServerPath() + this.atOptions.resetPasswordPath, body);
   }
-
 
 
   /**

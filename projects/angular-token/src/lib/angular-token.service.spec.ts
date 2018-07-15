@@ -26,21 +26,30 @@ describe('AngularTokenService', () => {
     'expiry': expiry
   };
 
+  // SignIn test data
   const signInData: SignInData = {
     login: 'test@test.de',
     password: 'password'
   };
 
-  const singInDataOutput = {
+  const singInDataOutput = JSON.stringify({
     email: 'test@test.de',
     password: 'password'
-  }
+  });
 
+  // Register test data
   const registerData: RegisterData = {
     login: 'test@test.de',
     password: 'password',
     passwordConfirmation: 'password'
   };
+
+  const registerDataOutput = JSON.stringify({
+    login: 'test@test.de',
+    password: 'password',
+    password_confirmation: 'password',
+    confirm_success_url: window.location.href
+  });
 
   let service: AngularTokenService;
   let backend: HttpTestingController;
@@ -48,7 +57,7 @@ describe('AngularTokenService', () => {
   class Mock { }
 
   beforeEach(() => {
-    // Inject HTTP and Angular2TokenService
+    // Inject HTTP and AngularTokenService
     TestBed.configureTestingModule({
       imports: [
         HttpClientModule,
@@ -84,7 +93,12 @@ describe('AngularTokenService', () => {
     backend.verify();
   });
 
-  // Testing Default Configuration
+
+  /**
+   *
+   * Testing Default Configuration
+   *
+   */
 
   it('signIn method should post data to default url', () => {
 
@@ -95,13 +109,12 @@ describe('AngularTokenService', () => {
       method: 'POST'
     });
 
-    expect(req.request.body).toEqual(JSON.stringify(singInDataOutput));
+    expect(req.request.body).toEqual(singInDataOutput);
   });
 
-  /*
   it('signOut method should delete to default url', () => {
 
-    service.signOut();
+    service.signOut().subscribe();
 
     backend.expectOne({
       url: 'auth/sign_out',
@@ -111,24 +124,23 @@ describe('AngularTokenService', () => {
 
   it('registerAccount should post data to default url', () => {
 
-    service.registerAccount(registerData);
+    service.registerAccount(registerData).subscribe();
 
     const req = backend.expectOne({
       url: 'auth',
       method: 'POST'
     });
 
-    expect(req.request.body).toEqual(JSON.stringify({
-      login: 					'test@test.de',
-      password:				'password',
-      password_confirmation:	'password',
-      confirm_success_url: 	window.location.href
-    }));
+    expect(req.request.body).toEqual(registerDataOutput);
   });
 
-  // Testing Custom Configuration
+  /**
+   *
+   * Testing Custom Configuration
+   *
+   */
 
-  it('Methods should send to configured path', () => {
+  /*it('Methods should send to configured path', () => {
 
     mockBackend.connections.subscribe(
       c => expect(c.request.url).toEqual('myapi/myauth/mysignin')

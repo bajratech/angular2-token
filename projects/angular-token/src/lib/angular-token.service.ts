@@ -160,15 +160,15 @@ export class AngularTokenService implements CanActivate {
       delete registerData.passwordConfirmation;
     }
 
-    const body = JSON.stringify({
+    const body = {
       [this.atOptions.loginField]: registerData.login,
       password: registerData.password,
       password_confirmation: registerData.password_confirmation,
-    });
+    };
 
-    registerData.confirm_success_url    = this.atOptions.registerAccountCallback;
+    registerData.confirm_success_url = this.atOptions.registerAccountCallback;
 
-    return this.http.post(this.getServerPath() + this.atOptions.registerAccountPath, JSON.stringify(body));
+    return this.http.post(this.getServerPath() + this.atOptions.registerAccountPath, body);
   }
 
   // Delete Account
@@ -180,10 +180,10 @@ export class AngularTokenService implements CanActivate {
   signIn(signInData: SignInData): Observable<any> {
     this.atCurrentUserType = (signInData.userType == null) ? null : this.getUserTypeByName(signInData.userType);
 
-    const body = JSON.stringify({
+    const body = {
       [this.atOptions.loginField]: signInData.login,
       password: signInData.password
-    });
+    };
 
     const observ = this.http.post(this.getServerPath() + this.atOptions.signInPath, body, { observe: 'response' }).pipe(share());
 
@@ -294,7 +294,7 @@ export class AngularTokenService implements CanActivate {
       args.reset_password_token = updatePasswordData.resetPasswordToken;
     }
 
-    const body = JSON.stringify(args);
+    const body = args;
     return this.http.put(this.getServerPath() + this.atOptions.updatePasswordPath, body);
   }
 
@@ -303,10 +303,10 @@ export class AngularTokenService implements CanActivate {
 
     this.atCurrentUserType = (resetPasswordData.userType == null) ? null : this.getUserTypeByName(resetPasswordData.userType);
 
-    const body = JSON.stringify({
+    const body = {
       [this.atOptions.loginField]: resetPasswordData.login,
       redirect_url: this.atOptions.resetPasswordCallback
-    });
+    };
 
     return this.http.post(this.getServerPath() + this.atOptions.resetPasswordPath, body);
   }

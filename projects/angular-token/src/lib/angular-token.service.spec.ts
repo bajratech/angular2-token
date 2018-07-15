@@ -2,12 +2,13 @@ import { HttpClientModule, HttpRequest, HttpParams } from '@angular/common/http'
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { 
+import {
   AngularTokenModule,
   AngularTokenService,
   SignInData,
   RegisterData,
-  UpdatePasswordData
+  UpdatePasswordData,
+  ResetPasswordData
 } from 'angular-token';
 
 describe('AngularTokenService', () => {
@@ -38,15 +39,15 @@ describe('AngularTokenService', () => {
     password: 'password'
   };
 
-  const signInDataOutput = JSON.stringify({
+  const signInDataOutput = {
     email: 'test@test.de',
     password: 'password'
-  });
+  };
 
-  const signInDataCustomOutput = JSON.stringify({
+  const signInDataCustomOutput = {
     username: 'test@test.de',
     password: 'password'
-  });
+  };
 
   // Register test data
   const registerData: RegisterData = {
@@ -55,12 +56,17 @@ describe('AngularTokenService', () => {
     passwordConfirmation: 'password'
   };
 
-  const registerDataOutput = JSON.stringify({
-    login: 'test@test.de',
+  const registerDataOutput = {
+    email: 'test@test.de',
     password: 'password',
-    password_confirmation: 'password',
-    confirm_success_url: window.location.href
-  });
+    password_confirmation: 'password'
+  };
+
+  const registerCustomDataOutput = {
+    username: 'test@test.de',
+    password: 'password',
+    password_confirmation: 'password'
+  };
 
   // Update password data
   const updatePasswordData: UpdatePasswordData = {
@@ -69,11 +75,26 @@ describe('AngularTokenService', () => {
     passwordCurrent: 'oldpassword'
   };
 
-  const updatePasswordDataOutput = JSON.stringify({
+  const updatePasswordDataOutput = {
     current_password: 'oldpassword',
     password: 'newpassword',
     password_confirmation: 'newpassword'
-  });
+  };
+
+  // Reset password data
+  const resetPasswordData: ResetPasswordData = {
+    login: 'test@test.de',
+  };
+
+  const resetPasswordDataOutput = {
+    email: 'test@test.de',
+    redirect_url: 'http://localhost:9876/context.html'
+  };
+
+  const resetCustomPasswordDataOutput = {
+    username: 'test@test.de',
+    redirect_url: 'http://localhost:9876/context.html'
+  };
 
   let service: AngularTokenService;
   let backend: HttpTestingController;
@@ -141,7 +162,7 @@ describe('AngularTokenService', () => {
       expect(req.request.body).toEqual(signInDataOutput);
     });
 
-    /*it('signIn method should set local storage', () => {
+    it('signIn method should set local storage', () => {
 
       service.signIn(signInData).subscribe(data => console.log(data));
 
@@ -152,15 +173,15 @@ describe('AngularTokenService', () => {
         { login: 'test@email.com' },
         { headers: tokenHeaders }
       );
-    
+
       expect(localStorage.getItem('accessToken')).toEqual(accessToken);
       expect(localStorage.getItem('client')).toEqual(client);
       expect(localStorage.getItem('expiry')).toEqual(expiry);
       expect(localStorage.getItem('tokenType')).toEqual(tokenType);
       expect(localStorage.getItem('uid')).toEqual(uid);
-    });*/
+    });
 
-    it('signOut method should DELETE', () => {
+    it('signOut method should DELETE and clear local storage', () => {
 
       service.signOut().subscribe();
 
@@ -168,6 +189,12 @@ describe('AngularTokenService', () => {
         url: 'auth/sign_out',
         method: 'DELETE'
       });
+
+      expect(localStorage.getItem('accessToken')).toBeNull();
+      expect(localStorage.getItem('client')).toBeNull();
+      expect(localStorage.getItem('expiry')).toBeNull();
+      expect(localStorage.getItem('tokenType')).toBeNull();
+      expect(localStorage.getItem('uid')).toBeNull();
     });
 
     it('registerAccount should POST data', () => {
@@ -192,19 +219,24 @@ describe('AngularTokenService', () => {
       });
     });
 
-    /*it('validateToken should not call signOut when it returns status 401', () => {
+    it('validateToken should not call signOut when it returns status 401', () => {
 
       const signOutSpy = spyOn(service, 'signOut');
 
-      service.validateToken().subscribe( error => expect(signOutSpy).not.toHaveBeenCalled());
+      service.validateToken().subscribe(() => {}, () => expect(signOutSpy).not.toHaveBeenCalled());
 
       const req = backend.expectOne({
         url: 'auth/validate_token',
         method: 'GET'
-      }).flush(
-        { status: 401 }
-      )
-    });*/
+      });
+
+      req.flush('',
+        {
+          status: 401,
+          statusText: 'Not authorized'
+        }
+      );
+    });
 
     it('updatePasswordPath should PUT', () => {
 
@@ -216,6 +248,18 @@ describe('AngularTokenService', () => {
       });
 
       expect(req.request.body).toEqual(updatePasswordDataOutput);
+    });
+
+    it('resetPasswordPath should POST', () => {
+
+      service.resetPassword(resetPasswordData).subscribe();
+
+      const req = backend.expectOne({
+        url: 'auth/password',
+        method: 'POST'
+      });
+
+      expect(req.request.body).toEqual(resetPasswordDataOutput);
     });
 
   });
@@ -238,6 +282,7 @@ describe('AngularTokenService', () => {
         deleteAccountPath: 'myauth/mydelete',
         validateTokenPath: 'myauth/myvalidate',
         updatePasswordPath: 'myauth/myupdate',
+        resetPasswordPath: 'myauth/myreset',
 
         loginField: 'username'
       });
@@ -274,14 +319,14 @@ describe('AngularTokenService', () => {
         method: 'POST'
       });
 
-      expect(req.request.body).toEqual(registerDataOutput);
+      expect(req.request.body).toEqual(registerCustomDataOutput);
     });
 
     it('validateToken should GET', () => {
 
       service.validateToken();
 
-      const req = backend.expectOne({
+      backend.expectOne({
         url: 'https://localhost/myapi/myauth/myvalidate',
         method: 'GET'
       });
@@ -298,88 +343,47 @@ describe('AngularTokenService', () => {
 
       expect(req.request.body).toEqual(updatePasswordDataOutput);
     });
+
+    it('resetPasswordPath should POST', () => {
+
+      service.resetPassword(resetPasswordData).subscribe();
+
+      const req = backend.expectOne({
+        url: 'https://localhost/myapi/myauth/myreset',
+        method: 'POST'
+      });
+
+      expect(req.request.body).toEqual(resetCustomPasswordDataOutput);
+    });
+
   });
 
-  /*it('validateToken should call signOut when it returns status 401', () => {
+  describe('signoutValidate', () => {
+    beforeEach(() => {
+      initService({
+        signOutFailedValidate: true
+      });
+    });
 
-    mockBackend.connections.subscribe(
-      c => c.mockError(new Response(new ResponseOptions({ status: 401, headers: new Headers() })))
-    );
+    it('validateToken should call signOut when it returns status 401', () => {
 
-    spyOn(tokenService, 'signOut');
+      const signOutSpy = spyOn(service, 'signOut');
 
-    tokenService.init({ apiPath: 'myapi', signOutFailedValidate: true });
-    tokenService.validateToken().subscribe(res => null, err => expect(tokenService.signOut).toHaveBeenCalled());
-  }));
+      service.validateToken().subscribe(() => {}, () => expect(signOutSpy).toHaveBeenCalled() );
 
+      const req = backend.expectOne({
+        url: 'auth/validate_token',
+        method: 'GET'
+      });
 
+      req.flush('',
+        {
+          status: 401,
+          statusText: 'Not authorized'
+        }
+      );
 
-
-
-  it('resetPasswordPath should send to configured path', inject([Angular2TokenService, MockBackend], (tokenService, mockBackend) => {
-
-    mockBackend.connections.subscribe(
-      c => expect(c.request.url).toEqual('myapi/myauth/myreset')
-    );
-
-    tokenService.init({ apiPath: 'myapi', resetPasswordPath: 'myauth/myreset' });
-    tokenService.resetPassword('emxaple@example.org');
-  }));
-
-  // Testing Token handling
-
-  it('signIn method should receive headers and set local storage', () => {
-
-
-    const req = backend.expectOne({
-      url: 'auth',
-      method: 'POST' }
-    );
-
-    expect(req.request.body).toEqual(JSON.stringify({
-      login: 					'test@test.de',
-      password:				'password',
-      password_confirmation:	'password',
-      confirm_success_url: 	window.location.href
-    }));
-
-    mockBackend.connections.subscribe(
-      c => c.mockRespond(new Response(
-        new ResponseOptions({
-          headers: tokenHeaders,
-          body: { login: 'test@email.com' }
-        })
-      ))
-    );
-
-    tokenService.signIn(signInData.login, signInData.password);
-
-    expect(localStorage.getItem('accessToken')).toEqual(accessToken);
-    expect(localStorage.getItem('client')).toEqual(client);
-    expect(localStorage.getItem('expiry')).toEqual(expiry);
-    expect(localStorage.getItem('tokenType')).toEqual(tokenType);
-    expect(localStorage.getItem('uid')).toEqual(uid);
+    });
   });
 
-  it('signOut method should clear local storage', inject([Angular2TokenService, MockBackend], (tokenService, mockBackend) => {
-    localStorage.setItem('token-type', tokenType);
-    localStorage.setItem('uid', uid);
-    localStorage.setItem('access-token', accessToken);
-    localStorage.setItem('client', client);
-    localStorage.setItem('expiry', expiry);
-
-    mockBackend.connections.subscribe(
-      c => expect(c.request.method).toEqual(RequestMethod.Delete)
-    );
-
-    tokenService.init();
-    tokenService.signOut();
-
-    expect(localStorage.getItem('accessToken')).toBe(null);
-    expect(localStorage.getItem('client')).toBe(null);
-    expect(localStorage.getItem('expiry')).toBe(null);
-    expect(localStorage.getItem('tokenType')).toBe(null);
-    expect(localStorage.getItem('uid')).toBe(null);
-  }));
-*/
 });

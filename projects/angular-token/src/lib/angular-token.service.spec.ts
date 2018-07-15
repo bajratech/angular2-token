@@ -7,7 +7,8 @@ import {
   AngularTokenService,
   SignInData,
   RegisterData,
-  UpdatePasswordData
+  UpdatePasswordData,
+  ResetPasswordData
 } from 'angular-token';
 
 describe('AngularTokenService', () => {
@@ -75,6 +76,21 @@ describe('AngularTokenService', () => {
     password_confirmation: 'newpassword'
   });
 
+  // Reset password data
+  const resetPasswordData: ResetPasswordData = {
+    login: 'test@test.de'
+  }
+
+  const resetPasswordDataOutput = JSON.stringify({
+    email: 'test@test.de',
+    redirect_url: window.location.href
+  });
+
+  const resetPasswordDataCustomOutput = JSON.stringify({
+    username: 'test@test.de',
+    redirect_url: window.location.href
+  });
+
   let service: AngularTokenService;
   let backend: HttpTestingController;
 
@@ -129,7 +145,7 @@ describe('AngularTokenService', () => {
       initService({});
     });
 
-    it('signIn method should POST data', () => {
+    it('signIn should POST data', () => {
 
       service.signIn(signInData);
 
@@ -143,7 +159,13 @@ describe('AngularTokenService', () => {
 
     /*it('signIn method should set local storage', () => {
 
-      service.signIn(signInData).subscribe(data => console.log(data));
+      service.signIn(signInData).subscribe(data => {
+        expect(localStorage.getItem('accessToken')).toEqual(accessToken);
+        expect(localStorage.getItem('client')).toEqual(client);
+        expect(localStorage.getItem('expiry')).toEqual(expiry);
+        expect(localStorage.getItem('tokenType')).toEqual(tokenType);
+        expect(localStorage.getItem('uid')).toEqual(uid);
+      });
 
       const req = backend.expectOne({
         url: 'auth/sign_in',
@@ -152,17 +174,33 @@ describe('AngularTokenService', () => {
         { login: 'test@email.com' },
         { headers: tokenHeaders }
       );
-    
-      expect(localStorage.getItem('accessToken')).toEqual(accessToken);
-      expect(localStorage.getItem('client')).toEqual(client);
-      expect(localStorage.getItem('expiry')).toEqual(expiry);
-      expect(localStorage.getItem('tokenType')).toEqual(tokenType);
-      expect(localStorage.getItem('uid')).toEqual(uid);
     });*/
 
-    it('signOut method should DELETE', () => {
+    it('signOut should DELETE', () => {
 
       service.signOut().subscribe();
+
+      backend.expectOne({
+        url: 'auth/sign_out',
+        method: 'DELETE'
+      });
+    });
+
+
+    it('signOut should clear local storage', () => {
+      localStorage.setItem('token-type', tokenType);
+      localStorage.setItem('uid', uid);
+      localStorage.setItem('access-token', accessToken);
+      localStorage.setItem('client', client);
+      localStorage.setItem('expiry', expiry);
+
+      service.signOut().subscribe( data => {
+        expect(localStorage.getItem('accessToken')).toBe(null);
+        expect(localStorage.getItem('client')).toBe(null);
+        expect(localStorage.getItem('expiry')).toBe(null);
+        expect(localStorage.getItem('tokenType')).toBe(null);
+        expect(localStorage.getItem('uid')).toBe(null);
+      });
 
       backend.expectOne({
         url: 'auth/sign_out',
@@ -206,7 +244,7 @@ describe('AngularTokenService', () => {
       )
     });*/
 
-    it('updatePasswordPath should PUT', () => {
+    it('updatePassword should PUT', () => {
 
       service.updatePassword(updatePasswordData).subscribe();
 
@@ -216,6 +254,18 @@ describe('AngularTokenService', () => {
       });
 
       expect(req.request.body).toEqual(updatePasswordDataOutput);
+    });
+
+    it('resetPassword should POST', () => {
+
+      service.resetPassword(resetPasswordData).subscribe();
+
+      const req = backend.expectOne({
+        url: 'auth/password',
+        method: 'POST'
+      });
+
+      expect(req.request.body).toEqual(resetPasswordDataOutput);
     });
 
   });
@@ -238,12 +288,13 @@ describe('AngularTokenService', () => {
         deleteAccountPath: 'myauth/mydelete',
         validateTokenPath: 'myauth/myvalidate',
         updatePasswordPath: 'myauth/myupdate',
+        resetPasswordPath: 'myauth/myreset',
 
         loginField: 'username'
       });
     });
 
-    it('signIn method should POST data', () => {
+    it('signIn should POST data', () => {
 
       service.signIn(signInData);
 
@@ -255,7 +306,7 @@ describe('AngularTokenService', () => {
       expect(req.request.body).toEqual(signInDataCustomOutput);
     });
 
-    it('signOut method should DELETE', () => {
+    it('signOut should DELETE', () => {
 
       service.signOut().subscribe();
 
@@ -286,8 +337,20 @@ describe('AngularTokenService', () => {
         method: 'GET'
       });
     });
+    
+    /*it('validateToken should call signOut when it returns status 401', () => {
 
-    it('updatePasswordPath should PUT', () => {
+      mockBackend.connections.subscribe(
+        c => c.mockError(new Response(new ResponseOptions({ status: 401, headers: new Headers() })))
+      );
+
+      spyOn(tokenService, 'signOut');
+
+      tokenService.init({ apiPath: 'myapi', signOutFailedValidate: true });
+      tokenService.validateToken().subscribe(res => null, err => expect(tokenService.signOut).toHaveBeenCalled());
+    }));*/
+
+    it('updatePassword should PUT', () => {
 
       service.updatePassword(updatePasswordData).subscribe();
 
@@ -298,88 +361,17 @@ describe('AngularTokenService', () => {
 
       expect(req.request.body).toEqual(updatePasswordDataOutput);
     });
+
+    it('resetPassword should POST', () => {
+
+      service.resetPassword(resetPasswordData).subscribe();
+
+      const req = backend.expectOne({
+        url: 'https://localhost/myapi/myauth/myreset',
+        method: 'POST'
+      });
+
+      expect(req.request.body).toEqual(resetPasswordDataCustomOutput);
+    });
   });
-
-  /*it('validateToken should call signOut when it returns status 401', () => {
-
-    mockBackend.connections.subscribe(
-      c => c.mockError(new Response(new ResponseOptions({ status: 401, headers: new Headers() })))
-    );
-
-    spyOn(tokenService, 'signOut');
-
-    tokenService.init({ apiPath: 'myapi', signOutFailedValidate: true });
-    tokenService.validateToken().subscribe(res => null, err => expect(tokenService.signOut).toHaveBeenCalled());
-  }));
-
-
-
-
-
-  it('resetPasswordPath should send to configured path', inject([Angular2TokenService, MockBackend], (tokenService, mockBackend) => {
-
-    mockBackend.connections.subscribe(
-      c => expect(c.request.url).toEqual('myapi/myauth/myreset')
-    );
-
-    tokenService.init({ apiPath: 'myapi', resetPasswordPath: 'myauth/myreset' });
-    tokenService.resetPassword('emxaple@example.org');
-  }));
-
-  // Testing Token handling
-
-  it('signIn method should receive headers and set local storage', () => {
-
-
-    const req = backend.expectOne({
-      url: 'auth',
-      method: 'POST' }
-    );
-
-    expect(req.request.body).toEqual(JSON.stringify({
-      login: 					'test@test.de',
-      password:				'password',
-      password_confirmation:	'password',
-      confirm_success_url: 	window.location.href
-    }));
-
-    mockBackend.connections.subscribe(
-      c => c.mockRespond(new Response(
-        new ResponseOptions({
-          headers: tokenHeaders,
-          body: { login: 'test@email.com' }
-        })
-      ))
-    );
-
-    tokenService.signIn(signInData.login, signInData.password);
-
-    expect(localStorage.getItem('accessToken')).toEqual(accessToken);
-    expect(localStorage.getItem('client')).toEqual(client);
-    expect(localStorage.getItem('expiry')).toEqual(expiry);
-    expect(localStorage.getItem('tokenType')).toEqual(tokenType);
-    expect(localStorage.getItem('uid')).toEqual(uid);
-  });
-
-  it('signOut method should clear local storage', inject([Angular2TokenService, MockBackend], (tokenService, mockBackend) => {
-    localStorage.setItem('token-type', tokenType);
-    localStorage.setItem('uid', uid);
-    localStorage.setItem('access-token', accessToken);
-    localStorage.setItem('client', client);
-    localStorage.setItem('expiry', expiry);
-
-    mockBackend.connections.subscribe(
-      c => expect(c.request.method).toEqual(RequestMethod.Delete)
-    );
-
-    tokenService.init();
-    tokenService.signOut();
-
-    expect(localStorage.getItem('accessToken')).toBe(null);
-    expect(localStorage.getItem('client')).toBe(null);
-    expect(localStorage.getItem('expiry')).toBe(null);
-    expect(localStorage.getItem('tokenType')).toBe(null);
-    expect(localStorage.getItem('uid')).toBe(null);
-  }));
-*/
 });

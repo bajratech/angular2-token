@@ -187,7 +187,7 @@ export class AngularTokenService implements CanActivate {
 
     const observ = this.http.post(this.getServerPath() + this.atOptions.signInPath, body, { observe: 'response' }).pipe(share());
 
-    observ.subscribe(res => this.atCurrentUserData = res.body['data'], _error => null);
+    observ.subscribe(res => this.atCurrentUserData = res.body['data']);
 
     return observ;
   }
@@ -252,7 +252,7 @@ export class AngularTokenService implements CanActivate {
 
   // Validate token request
   validateToken(): Observable<any> {
-    const observ = this.http.get(this.getServerPath() + this.atOptions.validateTokenPath);
+    const observ = this.http.get(this.getServerPath() + this.atOptions.validateTokenPath).pipe(share());
 
     observ.subscribe(
       (res) => this.atCurrentUserData = res['data'],

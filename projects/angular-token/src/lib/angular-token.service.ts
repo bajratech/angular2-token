@@ -20,7 +20,9 @@ import {
   AngularTokenOptions
 } from './angular-token.model';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root',
+})
 export class AngularTokenService implements CanActivate {
 
   get currentUserType(): string {

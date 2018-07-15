@@ -2,7 +2,13 @@ import { HttpClientModule, HttpRequest, HttpParams } from '@angular/common/http'
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { AngularTokenModule, AngularTokenService, SignInData, RegisterData } from 'angular-token';
+import { 
+  AngularTokenModule,
+  AngularTokenService,
+  SignInData,
+  RegisterData,
+  UpdatePasswordData
+} from 'angular-token';
 
 describe('AngularTokenService', () => {
 
@@ -32,8 +38,13 @@ describe('AngularTokenService', () => {
     password: 'password'
   };
 
-  const singInDataOutput = JSON.stringify({
+  const signInDataOutput = JSON.stringify({
     email: 'test@test.de',
+    password: 'password'
+  });
+
+  const signInDataCustomOutput = JSON.stringify({
+    username: 'test@test.de',
     password: 'password'
   });
 
@@ -49,6 +60,19 @@ describe('AngularTokenService', () => {
     password: 'password',
     password_confirmation: 'password',
     confirm_success_url: window.location.href
+  });
+
+  // Update password data
+  const updatePasswordData: UpdatePasswordData = {
+    password: 'newpassword',
+    passwordConfirmation: 'newpassword',
+    passwordCurrent: 'oldpassword'
+  };
+
+  const updatePasswordDataOutput = JSON.stringify({
+    current_password: 'oldpassword',
+    password: 'newpassword',
+    password_confirmation: 'newpassword'
   });
 
   let service: AngularTokenService;
@@ -114,8 +138,27 @@ describe('AngularTokenService', () => {
         method: 'POST'
       });
 
-      expect(req.request.body).toEqual(singInDataOutput);
+      expect(req.request.body).toEqual(signInDataOutput);
     });
+
+    /*it('signIn method should set local storage', () => {
+
+      service.signIn(signInData).subscribe(data => console.log(data));
+
+      const req = backend.expectOne({
+        url: 'auth/sign_in',
+        method: 'POST'
+      }).flush(
+        { login: 'test@email.com' },
+        { headers: tokenHeaders }
+      );
+    
+      expect(localStorage.getItem('accessToken')).toEqual(accessToken);
+      expect(localStorage.getItem('client')).toEqual(client);
+      expect(localStorage.getItem('expiry')).toEqual(expiry);
+      expect(localStorage.getItem('tokenType')).toEqual(tokenType);
+      expect(localStorage.getItem('uid')).toEqual(uid);
+    });*/
 
     it('signOut method should DELETE', () => {
 
@@ -149,6 +192,32 @@ describe('AngularTokenService', () => {
       });
     });
 
+    /*it('validateToken should not call signOut when it returns status 401', () => {
+
+      const signOutSpy = spyOn(service, 'signOut');
+
+      service.validateToken().subscribe( error => expect(signOutSpy).not.toHaveBeenCalled());
+
+      const req = backend.expectOne({
+        url: 'auth/validate_token',
+        method: 'GET'
+      }).flush(
+        { status: 401 }
+      )
+    });*/
+
+    it('updatePasswordPath should PUT', () => {
+
+      service.updatePassword(updatePasswordData).subscribe();
+
+      const req = backend.expectOne({
+        url: 'auth',
+        method: 'PUT'
+      });
+
+      expect(req.request.body).toEqual(updatePasswordDataOutput);
+    });
+
   });
 
   /**
@@ -167,7 +236,10 @@ describe('AngularTokenService', () => {
         signOutPath: 'myauth/mysignout',
         registerAccountPath: 'myauth/myregister',
         deleteAccountPath: 'myauth/mydelete',
-        validateTokenPath: 'myauth/myvalidate'
+        validateTokenPath: 'myauth/myvalidate',
+        updatePasswordPath: 'myauth/myupdate',
+
+        loginField: 'username'
       });
     });
 
@@ -180,7 +252,7 @@ describe('AngularTokenService', () => {
         method: 'POST'
       });
 
-      expect(req.request.body).toEqual(singInDataOutput);
+      expect(req.request.body).toEqual(signInDataCustomOutput);
     });
 
     it('signOut method should DELETE', () => {
@@ -214,6 +286,18 @@ describe('AngularTokenService', () => {
         method: 'GET'
       });
     });
+
+    it('updatePasswordPath should PUT', () => {
+
+      service.updatePassword(updatePasswordData).subscribe();
+
+      const req = backend.expectOne({
+        url: 'https://localhost/myapi/myauth/myupdate',
+        method: 'PUT'
+      });
+
+      expect(req.request.body).toEqual(updatePasswordDataOutput);
+    });
   });
 
   /*it('validateToken should call signOut when it returns status 401', () => {
@@ -228,27 +312,9 @@ describe('AngularTokenService', () => {
     tokenService.validateToken().subscribe(res => null, err => expect(tokenService.signOut).toHaveBeenCalled());
   }));
 
-  it('validateToken should not call signOut when it returns status 401', () => {
 
-    mockBackend.connections.subscribe(
-      c => c.mockError(new Response(new ResponseOptions({ status: 401, headers: new Headers() })))
-    );
 
-    spyOn(tokenService, 'signOut');
 
-    tokenService.init({ apiPath: 'myapi', signOutFailedValidate: false });
-    tokenService.validateToken().subscribe(res => null, err => expect(tokenService.signOut).not.toHaveBeenCalled());
-  }));
-
-  it('updatePasswordPath should send to configured path', inject([Angular2TokenService, MockBackend], (tokenService, mockBackend) => {
-
-    mockBackend.connections.subscribe(
-      c => expect(c.request.url).toEqual('myapi/myauth/myupdate')
-    );
-
-    tokenService.init({ apiPath: 'myapi', updatePasswordPath: 'myauth/myupdate' });
-    tokenService.updatePassword('password', 'password');
-  }));
 
   it('resetPasswordPath should send to configured path', inject([Angular2TokenService, MockBackend], (tokenService, mockBackend) => {
 
@@ -259,22 +325,6 @@ describe('AngularTokenService', () => {
     tokenService.init({ apiPath: 'myapi', resetPasswordPath: 'myauth/myreset' });
     tokenService.resetPassword('emxaple@example.org');
   }));
-
-
-  it('signIn method should use custom loginField', inject([Angular2TokenService, MockBackend], (tokenService, mockBackend) => {
-
-    mockBackend.connections.subscribe(
-      c => {
-        expect(c.request.getBody()).toEqual(JSON.stringify({"username":"test@test.de","password":"password"}));
-        expect(c.request.method).toEqual(RequestMethod.Post);
-        expect(c.request.url).toEqual('auth/sign_in');
-      }
-    );
-
-    tokenService.init({ loginField: 'username' });
-    tokenService.signIn(signInData);
-  }));
-
 
   // Testing Token handling
 

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { AngularTokenModule, AngularTokenService, SignInData, RegisterData } from 'angular-token';
 
-describe('Angular2TokenService', () => {
+describe('AngularTokenService', () => {
 
   // Init common test data
   const tokenType   = 'Bearer';
@@ -30,6 +30,11 @@ describe('Angular2TokenService', () => {
     login: 'test@test.de',
     password: 'password'
   };
+
+  const singInDataOutput = {
+    email: 'test@test.de',
+    password: 'password'
+  }
 
   const registerData: RegisterData = {
     login: 'test@test.de',
@@ -90,7 +95,7 @@ describe('Angular2TokenService', () => {
       method: 'POST'
     });
 
-    expect(req.request.body).toEqual(JSON.stringify(signInData));
+    expect(req.request.body).toEqual(JSON.stringify(singInDataOutput));
   });
 
   /*

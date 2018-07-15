@@ -54,15 +54,13 @@ describe('AngularTokenService', () => {
   let service: AngularTokenService;
   let backend: HttpTestingController;
 
-  class Mock { }
-
-  beforeEach(() => {
+  function initService(serviceConfig) {
     // Inject HTTP and AngularTokenService
     TestBed.configureTestingModule({
       imports: [
         HttpClientModule,
         HttpClientTestingModule,
-        AngularTokenModule.forRoot({})
+        AngularTokenModule.forRoot(serviceConfig)
       ],
       providers: [
         AngularTokenService
@@ -71,7 +69,9 @@ describe('AngularTokenService', () => {
 
     service = TestBed.get(AngularTokenService);
     backend = TestBed.get(HttpTestingController);
+  }
 
+  beforeEach(() => {
     // Fake Local Storage
     let store = {};
 
@@ -96,101 +96,127 @@ describe('AngularTokenService', () => {
 
   /**
    *
-   * Testing Default Configuration
+   * Test default configuration
    *
    */
 
-  it('signIn method should post data to default url', () => {
-
-    service.signIn(signInData);
-
-    const req = backend.expectOne({
-      url: 'auth/sign_in',
-      method: 'POST'
+  describe('default configuration', () => {
+    beforeEach(() => {
+      initService({});
     });
 
-    expect(req.request.body).toEqual(singInDataOutput);
-  });
+    it('signIn method should POST data', () => {
 
-  it('signOut method should delete to default url', () => {
+      service.signIn(signInData);
 
-    service.signOut().subscribe();
+      const req = backend.expectOne({
+        url: 'auth/sign_in',
+        method: 'POST'
+      });
 
-    backend.expectOne({
-      url: 'auth/sign_out',
-      method: 'DELETE'
-    });
-  });
-
-  it('registerAccount should post data to default url', () => {
-
-    service.registerAccount(registerData).subscribe();
-
-    const req = backend.expectOne({
-      url: 'auth',
-      method: 'POST'
+      expect(req.request.body).toEqual(singInDataOutput);
     });
 
-    expect(req.request.body).toEqual(registerDataOutput);
+    it('signOut method should DELETE', () => {
+
+      service.signOut().subscribe();
+
+      backend.expectOne({
+        url: 'auth/sign_out',
+        method: 'DELETE'
+      });
+    });
+
+    it('registerAccount should POST data', () => {
+
+      service.registerAccount(registerData).subscribe();
+
+      const req = backend.expectOne({
+        url: 'auth',
+        method: 'POST'
+      });
+
+      expect(req.request.body).toEqual(registerDataOutput);
+    });
+
+    it('validateToken should GET', () => {
+
+      service.validateToken();
+
+      const req = backend.expectOne({
+        url: 'auth/validate_token',
+        method: 'GET'
+      });
+    });
+
   });
 
   /**
    *
-   * Testing Custom Configuration
+   * Testing custom configuration
    *
    */
 
-  /*it('Methods should send to configured path', () => {
+  describe('custom configuration', () => {
+    beforeEach(() => {
+      initService({
+        apiBase: 'https://localhost',
+        apiPath: 'myapi',
 
-    mockBackend.connections.subscribe(
-      c => expect(c.request.url).toEqual('myapi/myauth/mysignin')
-    );
+        signInPath: 'myauth/mysignin',
+        signOutPath: 'myauth/mysignout',
+        registerAccountPath: 'myauth/myregister',
+        deleteAccountPath: 'myauth/mydelete',
+        validateTokenPath: 'myauth/myvalidate'
+      });
+    });
 
-    tokenService.init({ apiPath: 'myapi', signInPath: 'myauth/mysignin' });
-    tokenService.signIn(signInData.login, signInData.password);
-  }));
+    it('signIn method should POST data', () => {
 
-  it('signOut should send to configured path', () => {
+      service.signIn(signInData);
 
-    mockBackend.connections.subscribe(
-      c => expect(c.request.url).toEqual('myapi/myauth/mysignout')
-    );
+      const req = backend.expectOne({
+        url: 'https://localhost/myapi/myauth/mysignin',
+        method: 'POST'
+      });
 
-    tokenService.init({ apiPath: 'myapi', signOutPath: 'myauth/mysignout' });
-    tokenService.signOut();
-  }));
+      expect(req.request.body).toEqual(singInDataOutput);
+    });
 
-  it('registerAccount should send to configured path', () => {
+    it('signOut method should DELETE', () => {
 
-    mockBackend.connections.subscribe(
-      c => expect(c.request.url).toEqual('myapi/myauth/myregister')
-    );
+      service.signOut().subscribe();
 
-    tokenService.init({ apiPath: 'myapi', registerAccountPath: 'myauth/myregister' });
-    tokenService.registerAccount(registerData);
-  }));
+      backend.expectOne({
+        url: 'https://localhost/myapi/myauth/mysignout',
+        method: 'DELETE'
+      });
+    });
 
-  it('deleteAccount should send to configured path', () => {
+    it('registerAccount should POST data', () => {
 
-    mockBackend.connections.subscribe(
-      c => expect(c.request.url).toEqual('myapi/myauth/mydelete')
-    );
+      service.registerAccount(registerData).subscribe();
 
-    tokenService.init({ apiPath: 'myapi', deleteAccountPath: 'myauth/mydelete' });
-    tokenService.deleteAccount();
-  }));
+      const req = backend.expectOne({
+        url: 'https://localhost/myapi/myauth/myregister',
+        method: 'POST'
+      });
 
-  it('validateToken should send to configured path', () => {
+      expect(req.request.body).toEqual(registerDataOutput);
+    });
 
-    mockBackend.connections.subscribe(
-      c => expect(c.request.url).toEqual('myapi/myauth/myvalidate')
-    );
+    it('validateToken should GET', () => {
 
-    tokenService.init({ apiPath: 'myapi', validateTokenPath: 'myauth/myvalidate' });
-    tokenService.validateToken();
-  }));
+      service.validateToken();
 
-  it('validateToken should call signOut when it returns status 401', () => {
+      const req = backend.expectOne({
+        url: 'https://localhost/myapi/myauth/myvalidate',
+        method: 'GET'
+      });
+    });
+  });
+
+  /*it('validateToken should call signOut when it returns status 401', () => {
 
     mockBackend.connections.subscribe(
       c => c.mockError(new Response(new ResponseOptions({ status: 401, headers: new Headers() })))

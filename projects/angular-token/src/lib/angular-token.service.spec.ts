@@ -1,4 +1,4 @@
-import { HttpClientModule, HttpRequest, HttpParams } from '@angular/common/http';
+import { HttpClientModule } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
@@ -19,10 +19,6 @@ describe('AngularTokenService', () => {
   const accessToken = 'fJypB1ugmWHJfW6CELNfug';
   const client      = '5dayGs4hWTi4eKwSifu_mg';
   const expiry      = '1472108318';
-
-  const emptyHeaders = {
-    'content-Type': 'application/json'
-  };
 
   const tokenHeaders = {
     'content-Type': 'application/json',
@@ -138,7 +134,6 @@ describe('AngularTokenService', () => {
     backend.verify();
   });
 
-
   /**
    *
    * Test default configuration
@@ -150,7 +145,7 @@ describe('AngularTokenService', () => {
       initService({});
     });
 
-    it('signIn method should POST data', () => {
+    it('signIn should POST data', () => {
 
       service.signIn(signInData);
 
@@ -164,24 +159,26 @@ describe('AngularTokenService', () => {
 
     it('signIn method should set local storage', () => {
 
-      service.signIn(signInData).subscribe(data => console.log(data));
+      service.signIn(signInData).subscribe(data => {
+        expect(localStorage.getItem('accessToken')).toEqual(accessToken);
+        expect(localStorage.getItem('client')).toEqual(client);
+        expect(localStorage.getItem('expiry')).toEqual(expiry);
+        expect(localStorage.getItem('tokenType')).toEqual(tokenType);
+        expect(localStorage.getItem('uid')).toEqual(uid);
+      });
 
       const req = backend.expectOne({
         url: 'auth/sign_in',
         method: 'POST'
-      }).flush(
+      });
+
+      req.flush(
         { login: 'test@email.com' },
         { headers: tokenHeaders }
       );
-
-      expect(localStorage.getItem('accessToken')).toEqual(accessToken);
-      expect(localStorage.getItem('client')).toEqual(client);
-      expect(localStorage.getItem('expiry')).toEqual(expiry);
-      expect(localStorage.getItem('tokenType')).toEqual(tokenType);
-      expect(localStorage.getItem('uid')).toEqual(uid);
     });
 
-    it('signOut method should DELETE and clear local storage', () => {
+    it('signOut should DELETE', () => {
 
       service.signOut().subscribe();
 
@@ -195,6 +192,28 @@ describe('AngularTokenService', () => {
       expect(localStorage.getItem('expiry')).toBeNull();
       expect(localStorage.getItem('tokenType')).toBeNull();
       expect(localStorage.getItem('uid')).toBeNull();
+    });
+
+
+    it('signOut should clear local storage', () => {
+      localStorage.setItem('token-type', tokenType);
+      localStorage.setItem('uid', uid);
+      localStorage.setItem('access-token', accessToken);
+      localStorage.setItem('client', client);
+      localStorage.setItem('expiry', expiry);
+
+      service.signOut().subscribe( data => {
+        expect(localStorage.getItem('accessToken')).toBe(null);
+        expect(localStorage.getItem('client')).toBe(null);
+        expect(localStorage.getItem('expiry')).toBe(null);
+        expect(localStorage.getItem('tokenType')).toBe(null);
+        expect(localStorage.getItem('uid')).toBe(null);
+      });
+
+      backend.expectOne({
+        url: 'auth/sign_out',
+        method: 'DELETE'
+      });
     });
 
     it('registerAccount should POST data', () => {
@@ -213,7 +232,7 @@ describe('AngularTokenService', () => {
 
       service.validateToken();
 
-      const req = backend.expectOne({
+      backend.expectOne({
         url: 'auth/validate_token',
         method: 'GET'
       });
@@ -238,7 +257,7 @@ describe('AngularTokenService', () => {
       );
     });
 
-    it('updatePasswordPath should PUT', () => {
+    it('updatePassword should PUT', () => {
 
       service.updatePassword(updatePasswordData).subscribe();
 
@@ -250,7 +269,7 @@ describe('AngularTokenService', () => {
       expect(req.request.body).toEqual(updatePasswordDataOutput);
     });
 
-    it('resetPasswordPath should POST', () => {
+    it('resetPassword should POST', () => {
 
       service.resetPassword(resetPasswordData).subscribe();
 
@@ -288,7 +307,7 @@ describe('AngularTokenService', () => {
       });
     });
 
-    it('signIn method should POST data', () => {
+    it('signIn should POST data', () => {
 
       service.signIn(signInData);
 
@@ -300,7 +319,7 @@ describe('AngularTokenService', () => {
       expect(req.request.body).toEqual(signInDataCustomOutput);
     });
 
-    it('signOut method should DELETE', () => {
+    it('signOut should DELETE', () => {
 
       service.signOut().subscribe();
 
@@ -332,7 +351,7 @@ describe('AngularTokenService', () => {
       });
     });
 
-    it('updatePasswordPath should PUT', () => {
+    it('updatePassword should PUT', () => {
 
       service.updatePassword(updatePasswordData).subscribe();
 
@@ -344,7 +363,7 @@ describe('AngularTokenService', () => {
       expect(req.request.body).toEqual(updatePasswordDataOutput);
     });
 
-    it('resetPasswordPath should POST', () => {
+    it('resetPassword should POST', () => {
 
       service.resetPassword(resetPasswordData).subscribe();
 

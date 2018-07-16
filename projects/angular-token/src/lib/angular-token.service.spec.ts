@@ -4,7 +4,14 @@ import { TestBed } from '@angular/core/testing';
 
 import { AngularTokenModule } from './angular-token.module';
 import { AngularTokenService } from './angular-token.service';
-import { SignInData, RegisterData, UpdatePasswordData, ResetPasswordData } from './angular-token.model';
+import { 
+  SignInData,
+  RegisterData,
+  UpdatePasswordData,
+  ResetPasswordData,
+  AuthData,
+  UserData
+} from './angular-token.model';
 
 describe('AngularTokenService', () => {
 
@@ -23,6 +30,24 @@ describe('AngularTokenService', () => {
     'client': client,
     'expiry': expiry
   };
+
+  const authData: AuthData = {
+    tokenType: tokenType,
+    uid: uid,
+    accessToken: accessToken,
+    client: client,
+    expiry: expiry
+  }
+
+  const userData: UserData = {
+    id:       1,
+    provider: 'provider',
+    uid:      'uid',
+    name:     'name',
+    nickname: 'nickname',
+    image:    null,
+    login:    'test@test.de'
+  }
 
   // SignIn test data
   const signInData: SignInData = {
@@ -400,4 +425,70 @@ describe('AngularTokenService', () => {
     });
   });
 
+  describe('user signed out', () => {
+    beforeEach(() => {
+      initService({});
+    });
+
+    it('currentAuthData should return undefined', () => {
+      expect(service.currentAuthData).toEqual(undefined);
+    });
+
+    it('currentUserData should return undefined', () => {
+      expect(service.currentUserData).toEqual(undefined);
+    });
+
+    it('currentUserType should return undefined', () => {
+      expect(service.currentUserType).toEqual(undefined);
+    });
+
+    it('userSignedIn should return false', () => {
+      expect(service.userSignedIn()).toEqual(false);
+    });
+  });
+
+  describe('user signed in', () => {
+    beforeEach(() => {
+      initService({});
+    });
+
+    it('currentAuthData should return current auth data', () => {
+      service.signIn(signInData).subscribe(
+        data => expect(service.currentAuthData).toEqual(authData)
+      );
+
+      const req = backend.expectOne({
+        url: 'auth/sign_in',
+        method: 'POST'
+      });
+
+      req.flush( userData, { headers: tokenHeaders } );
+    });
+
+    /*it('currentUserData should return current user data', () => {
+      service.signIn(signInData).subscribe(
+        data => expect(service.currentUserData).toEqual(userData)
+      );
+
+      const req = backend.expectOne({
+        url: 'auth/sign_in',
+        method: 'POST'
+      });
+
+      req.flush( userData, { headers: tokenHeaders } );
+    });*/
+
+    it('userSignedIn should true', () => {
+      service.signIn(signInData).subscribe(
+        data => expect(service.userSignedIn()).toEqual(true)
+      );
+
+      const req = backend.expectOne({
+        url: 'auth/sign_in',
+        method: 'POST'
+      });
+
+      req.flush( userData, { headers: tokenHeaders } );
+    });
+  });
 });

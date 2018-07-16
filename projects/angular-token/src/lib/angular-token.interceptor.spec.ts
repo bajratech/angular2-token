@@ -65,121 +65,116 @@ describe('AngularTokenInterceptor', () => {
   describe('http interceptor', () => {
 
     describe('with apiBase', () => {
-        beforeEach(() => {
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('client', client);
-            localStorage.setItem('expiry', expiry);
-            localStorage.setItem('tokenType', tokenType);
-            localStorage.setItem('uid', uid);
+      beforeEach(() => {
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('client', client);
+        localStorage.setItem('expiry', expiry);
+        localStorage.setItem('tokenType', tokenType);
+        localStorage.setItem('uid', uid);
 
-            initService({
-                apiBase: 'http://localhost'
-            });
+        initService({
+          apiBase: 'http://localhost'
         });
+      });
 
-        it('should add authorization headers when to same domain', inject([HttpClient], (http: HttpClient) => {
-            const testUrl = 'http://localhost/random-endpoint';
+      it('should add authorization headers when to same domain', inject([HttpClient], (http: HttpClient) => {
+        const testUrl = 'http://localhost/random-endpoint';
 
-            http.get(testUrl).subscribe(response => expect(response).toBeTruthy());
+        http.get(testUrl).subscribe(response => expect(response).toBeTruthy());
 
-            const req = backend.expectOne({
-                url: testUrl,
-                method: 'GET'
-            });
-            req.flush({data: 'test'});
+        const req = backend.expectOne({
+            url: testUrl,
+            method: 'GET'
+        });
+        req.flush({data: 'test'});
+
+        expect(req.request.headers.get('access-token')).toBe(accessToken);
+        expect(req.request.headers.get('client')).toBe(client);
+        expect(req.request.headers.get('expiry')).toBe(expiry);
+        expect(req.request.headers.get('token-type')).toBe(tokenType);
+        expect(req.request.headers.get('uid')).toBe(uid);
+      }));
     
-            expect(req.request.headers.get('access-token')).toBe(accessToken);
-            expect(req.request.headers.get('client')).toBe(client);
-            expect(req.request.headers.get('expiry')).toBe(expiry);
-            expect(req.request.headers.get('token-type')).toBe(tokenType);
-            expect(req.request.headers.get('uid')).toBe(uid);
-        }));
-      
-        it('should not add authorization headers when to different domain', inject([HttpClient], (http: HttpClient) => {
-            const testUrl = 'http://not-local-host/random-endpoint';
+      it('should not add authorization headers when to different domain', inject([HttpClient], (http: HttpClient) => {
+        const testUrl = 'http://not-local-host/random-endpoint';
 
-            http.get(testUrl).subscribe(response => expect(response).toBeTruthy());
+        http.get(testUrl).subscribe(response => expect(response).toBeTruthy());
 
-            const req = backend.expectOne({
-                url: testUrl,
-                method: 'GET'
-            });
-            req.flush({data: 'test'});
-    
-            expect(req.request.headers.get('access-token')).toBeNull();
-            expect(req.request.headers.get('client')).toBeNull();
-            expect(req.request.headers.get('expiry')).toBeNull();
-            expect(req.request.headers.get('token-type')).toBeNull();
-            expect(req.request.headers.get('uid')).toBeNull();
-        }));
+        const req = backend.expectOne({
+            url: testUrl,
+            method: 'GET'
+        });
+        req.flush({data: 'test'});
+
+        expect(req.request.headers.get('access-token')).toBeNull();
+        expect(req.request.headers.get('client')).toBeNull();
+        expect(req.request.headers.get('expiry')).toBeNull();
+        expect(req.request.headers.get('token-type')).toBeNull();
+        expect(req.request.headers.get('uid')).toBeNull();
+      }));
 
     });
 
     describe('without apiBase', () => {
-        beforeEach(() => {
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('client', client);
-            localStorage.setItem('expiry', expiry);
-            localStorage.setItem('tokenType', tokenType);
-            localStorage.setItem('uid', uid);
+      beforeEach(() => {
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('client', client);
+        localStorage.setItem('expiry', expiry);
+        localStorage.setItem('tokenType', tokenType);
+        localStorage.setItem('uid', uid);
 
-            initService({});
+        initService({});
+      });
+
+      it('should add authorization headers', inject([HttpClient], (http: HttpClient) => {
+        const testUrl = 'http://localhost/random-endpoint';
+
+        http.get(testUrl).subscribe(response => expect(response).toBeTruthy());
+
+        const req = backend.expectOne({
+            url: testUrl,
+            method: 'GET'
         });
+        req.flush({data: 'test'});
 
-        it('should add authorization headers', inject([HttpClient], (http: HttpClient) => {
-            const testUrl = 'http://localhost/random-endpoint';
-
-            http.get(testUrl).subscribe(response => expect(response).toBeTruthy());
-
-            const req = backend.expectOne({
-                url: testUrl,
-                method: 'GET'
-            });
-            req.flush({data: 'test'});
-    
-            expect(req.request.headers.get('access-token')).toBe(accessToken);
-            expect(req.request.headers.get('client')).toBe(client);
-            expect(req.request.headers.get('expiry')).toBe(expiry);
-            expect(req.request.headers.get('token-type')).toBe(tokenType);
-            expect(req.request.headers.get('uid')).toBe(uid);
-        }));
-      
+        expect(req.request.headers.get('access-token')).toBe(accessToken);
+        expect(req.request.headers.get('client')).toBe(client);
+        expect(req.request.headers.get('expiry')).toBe(expiry);
+        expect(req.request.headers.get('token-type')).toBe(tokenType);
+        expect(req.request.headers.get('uid')).toBe(uid);
+      }));
     });
 
     describe('handleResponse', () => {
-        beforeEach(() => {
-            initService({});
+      beforeEach(() => {
+          initService({});
+      });
+
+      it('should handle headers from a request', inject([HttpClient], (http: HttpClient) => {
+        const testUrl = 'http://localhost/random-endpoint';
+
+        http.get(testUrl).subscribe(response => expect(response).toBeTruthy());
+
+        const req = backend.expectOne({
+            url: testUrl,
+            method: 'GET'
+        });
+        req.flush({data: 'test'}, {
+          headers: {
+            'access-token': accessToken,
+            'client': client,
+            'expiry': expiry,
+            'token-type': tokenType,
+            'uid': uid
+          }
         });
 
-        it('should handle headers from a request', inject([HttpClient], (http: HttpClient) => {
-            const testUrl = 'http://localhost/random-endpoint';
-
-            http.get(testUrl).subscribe(response => expect(response).toBeTruthy());
-
-            const req = backend.expectOne({
-                url: testUrl,
-                method: 'GET'
-            });
-            req.flush({data: 'test'}, {
-                headers: {
-                    'access-token': accessToken,
-                    'client': client,
-                    'expiry': expiry,
-                    'token-type': tokenType,
-                    'uid': uid
-                }
-            });
-
-            expect(localStorage.getItem('accessToken')).toBe(accessToken);
-            expect(localStorage.getItem('client')).toBe(client);
-            expect(localStorage.getItem('expiry')).toBe(expiry);
-            expect(localStorage.getItem('tokenType')).toBe(tokenType);
-            expect(localStorage.getItem('uid')).toBe(uid);
-        }));
-
+        expect(localStorage.getItem('accessToken')).toBe(accessToken);
+        expect(localStorage.getItem('client')).toBe(client);
+        expect(localStorage.getItem('expiry')).toBe(expiry);
+        expect(localStorage.getItem('tokenType')).toBe(tokenType);
+        expect(localStorage.getItem('uid')).toBe(uid);
+      }));
     });
-
   });
-
-
 });

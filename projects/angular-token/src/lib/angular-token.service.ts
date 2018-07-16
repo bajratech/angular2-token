@@ -29,7 +29,7 @@ export class AngularTokenService implements CanActivate {
     if (this.atCurrentUserType != null) {
       return this.atCurrentUserType.name;
     } else {
-      return null;
+      return undefined;
     }
   }
 
@@ -515,11 +515,10 @@ export class AngularTokenService implements CanActivate {
   private requestCredentialsViaPostMessage(authWindow: any): Observable<any> {
     const pollerObserv = interval(500);
 
-    const responseObserv = fromEvent(window, 'message')
-                            .pipe(
-                                pluck('data'),
-                                filter(this.oAuthWindowResponseFilter)
-                            );
+    const responseObserv = fromEvent(window, 'message').pipe(
+      pluck('data'),
+      filter(this.oAuthWindowResponseFilter)
+    );
 
     const responseSubscription = responseObserv.subscribe(
       this.getAuthDataFromPostMessage.bind(this)

@@ -137,7 +137,7 @@ export class AngularTokenService implements CanActivate {
     }
   }
 
-  
+
   /**
    *
    * Actions

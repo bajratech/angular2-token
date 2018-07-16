@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { AngularTokenModule } from './angular-token.module';
 import { AngularTokenService } from './angular-token.service';
-import { 
+import {
   SignInData,
   RegisterData,
   UpdatePasswordData,
@@ -37,7 +37,7 @@ describe('AngularTokenService', () => {
     accessToken: accessToken,
     client: client,
     expiry: expiry
-  }
+  };
 
   const userData: UserData = {
     id:       1,
@@ -47,7 +47,7 @@ describe('AngularTokenService', () => {
     nickname: 'nickname',
     image:    null,
     login:    'test@test.de'
-  }
+  };
 
   // SignIn test data
   const signInData: SignInData = {

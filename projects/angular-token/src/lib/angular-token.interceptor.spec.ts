@@ -94,7 +94,7 @@ describe('AngularTokenInterceptor', () => {
         expect(req.request.headers.get('token-type')).toBe(tokenType);
         expect(req.request.headers.get('uid')).toBe(uid);
       }));
-    
+
       it('should not add authorization headers when to different domain', inject([HttpClient], (http: HttpClient) => {
         const testUrl = 'http://not-local-host/random-endpoint';
 

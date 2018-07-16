@@ -26,34 +26,34 @@ import {
 export class AngularTokenService implements CanActivate {
 
   get currentUserType(): string {
-    if (this.atCurrentUserType != null) {
-      return this.atCurrentUserType.name;
+    if (this.userType != null) {
+      return this.userType.name;
     } else {
       return undefined;
     }
   }
 
   get currentUserData(): UserData {
-    return this.atCurrentUserData;
+    return this.userData;
   }
 
   get currentAuthData(): AuthData {
-    return this.atCurrentAuthData;
+    return this.authData;
   }
 
   get baseHeaders(): any {
-    return this.atOptions.globalOptions.headers;
+    return this.options.globalOptions.headers;
   }
 
   get apiBase(): any {
-    return this.atOptions.apiBase;
+    return this.options.apiBase;
   }
 
 
-  private atOptions: AngularTokenOptions;
-  private atCurrentUserType: UserType;
-  private atCurrentAuthData: AuthData;
-  private atCurrentUserData: UserData;
+  private options: AngularTokenOptions;
+  private userType: UserType;
+  private authData: AuthData;
+  private userData: UserData;
 
   constructor(
     private http: HttpClient,
@@ -102,9 +102,9 @@ export class AngularTokenService implements CanActivate {
     };
 
     const mergedOptions = (<any>Object).assign(defaultOptions, config);
-    this.atOptions = mergedOptions;
+    this.options = mergedOptions;
 
-    if (this.atOptions.apiBase === null) {
+    if (this.options.apiBase === null) {
       console.warn(`[angular-token] You have not configured 'apiBase', which may result in security issues. ` +
                    `Please refer to the documentation at https://github.com/neroniaky/angular2-token/wiki`);
     }
@@ -113,7 +113,7 @@ export class AngularTokenService implements CanActivate {
   }
 
   userSignedIn(): boolean {
-      return !!this.atCurrentAuthData;
+      return !!this.authData;
   }
 
   canActivate(): boolean {
@@ -121,16 +121,16 @@ export class AngularTokenService implements CanActivate {
       return true;
     } else {
       // Store current location in storage (usefull for redirection after signing in)
-      if (this.atOptions.signInStoredUrlStorageKey) {
+      if (this.options.signInStoredUrlStorageKey) {
         localStorage.setItem(
-          this.atOptions.signInStoredUrlStorageKey,
+          this.options.signInStoredUrlStorageKey,
           window.location.pathname + window.location.search
         );
       }
 
       // Redirect user to sign in if signInRedirect is set
-      if (this.router && this.atOptions.signInRedirect) {
-        this.router.navigate([this.atOptions.signInRedirect]);
+      if (this.router && this.options.signInRedirect) {
+        this.router.navigate([this.options.signInRedirect]);
       }
 
       return false;
@@ -148,9 +148,9 @@ export class AngularTokenService implements CanActivate {
   registerAccount(registerData: RegisterData): Observable<any> {
 
     if (registerData.userType == null) {
-      this.atCurrentUserType = null;
+      this.userType = null;
     } else {
-      this.atCurrentUserType = this.getUserTypeByName(registerData.userType);
+      this.userType = this.getUserTypeByName(registerData.userType);
       delete registerData.userType;
     }
 
@@ -163,33 +163,33 @@ export class AngularTokenService implements CanActivate {
     }
 
     const body = {
-      [this.atOptions.loginField]: registerData.login,
+      [this.options.loginField]: registerData.login,
       password: registerData.password,
       password_confirmation: registerData.password_confirmation,
     };
 
-    registerData.confirm_success_url = this.atOptions.registerAccountCallback;
+    registerData.confirm_success_url = this.options.registerAccountCallback;
 
-    return this.http.post(this.getServerPath() + this.atOptions.registerAccountPath, body);
+    return this.http.post(this.getServerPath() + this.options.registerAccountPath, body);
   }
 
   // Delete Account
   deleteAccount(): Observable<any> {
-    return this.http.delete(this.getServerPath() + this.atOptions.deleteAccountPath);
+    return this.http.delete(this.getServerPath() + this.options.deleteAccountPath);
   }
 
   // Sign in request and set storage
   signIn(signInData: SignInData): Observable<any> {
-    this.atCurrentUserType = (signInData.userType == null) ? null : this.getUserTypeByName(signInData.userType);
+    this.userType = (signInData.userType == null) ? null : this.getUserTypeByName(signInData.userType);
 
     const body = {
-      [this.atOptions.loginField]: signInData.login,
+      [this.options.loginField]: signInData.login,
       password: signInData.password
     };
 
-    const observ = this.http.post(this.getServerPath() + this.atOptions.signInPath, body, { observe: 'response' }).pipe(share());
+    const observ = this.http.post(this.getServerPath() + this.options.signInPath, body, { observe: 'response' }).pipe(share());
 
-    observ.subscribe(res => this.atCurrentUserData = res.body['data']);
+    observ.subscribe(res => this.userData = res.body['data']);
 
     return observ;
   }
@@ -197,12 +197,12 @@ export class AngularTokenService implements CanActivate {
   signInOAuth(oAuthType: string) {
 
     const oAuthPath: string = this.getOAuthPath(oAuthType);
-    const callbackUrl = `${window.location.origin}/${this.atOptions.oAuthCallbackPath}`;
-    const oAuthWindowType: string = this.atOptions.oAuthWindowType;
+    const callbackUrl = `${window.location.origin}/${this.options.oAuthCallbackPath}`;
+    const oAuthWindowType: string = this.options.oAuthWindowType;
     const authUrl: string = this.getOAuthUrl(oAuthPath, callbackUrl, oAuthWindowType);
 
     if (oAuthWindowType === 'newWindow') {
-      const oAuthWindowOptions = this.atOptions.oAuthWindowOptions;
+      const oAuthWindowOptions = this.options.oAuthWindowOptions;
       let windowOptions = '';
 
       if (oAuthWindowOptions) {
@@ -232,7 +232,7 @@ export class AngularTokenService implements CanActivate {
 
   // Sign out request and delete storage
   signOut(): Observable<any> {
-    const observ = this.http.delete<any>(this.getServerPath() + this.atOptions.signOutPath)
+    const observ = this.http.delete<any>(this.getServerPath() + this.options.signOutPath)
           // Only remove the localStorage and clear the data after the call
           .pipe(
             finalize(() => {
@@ -242,9 +242,9 @@ export class AngularTokenService implements CanActivate {
                 localStorage.removeItem('tokenType');
                 localStorage.removeItem('uid');
 
-                this.atCurrentAuthData = null;
-                this.atCurrentUserType = null;
-                this.atCurrentUserData = null;
+                this.authData = null;
+                this.userType = null;
+                this.userData = null;
               }
             )
           );
@@ -254,12 +254,12 @@ export class AngularTokenService implements CanActivate {
 
   // Validate token request
   validateToken(): Observable<any> {
-    const observ = this.http.get(this.getServerPath() + this.atOptions.validateTokenPath).pipe(share());
+    const observ = this.http.get(this.getServerPath() + this.options.validateTokenPath).pipe(share());
 
     observ.subscribe(
-      (res) => this.atCurrentUserData = res['data'],
+      (res) => this.userData = res['data'],
       (error) => {
-        if (error.status === 401 && this.atOptions.signOutFailedValidate) {
+        if (error.status === 401 && this.options.signOutFailedValidate) {
           this.signOut();
         }
     });
@@ -271,7 +271,7 @@ export class AngularTokenService implements CanActivate {
   updatePassword(updatePasswordData: UpdatePasswordData): Observable<any> {
 
     if (updatePasswordData.userType != null) {
-      this.atCurrentUserType = this.getUserTypeByName(updatePasswordData.userType);
+      this.userType = this.getUserTypeByName(updatePasswordData.userType);
     }
 
     let args: any;
@@ -294,20 +294,20 @@ export class AngularTokenService implements CanActivate {
     }
 
     const body = args;
-    return this.http.put(this.getServerPath() + this.atOptions.updatePasswordPath, body);
+    return this.http.put(this.getServerPath() + this.options.updatePasswordPath, body);
   }
 
   // Reset password request
   resetPassword(resetPasswordData: ResetPasswordData): Observable<any> {
 
-    this.atCurrentUserType = (resetPasswordData.userType == null) ? null : this.getUserTypeByName(resetPasswordData.userType);
+    this.userType = (resetPasswordData.userType == null) ? null : this.getUserTypeByName(resetPasswordData.userType);
 
     const body = {
-      [this.atOptions.loginField]: resetPasswordData.login,
-      redirect_url: this.atOptions.resetPasswordCallback
+      [this.options.loginField]: resetPasswordData.login,
+      redirect_url: this.options.resetPasswordCallback
     };
 
-    return this.http.post(this.getServerPath() + this.atOptions.resetPasswordPath, body);
+    return this.http.post(this.getServerPath() + this.options.resetPasswordPath, body);
   }
 
 
@@ -318,18 +318,18 @@ export class AngularTokenService implements CanActivate {
    */
 
   private getUserPath(): string {
-    return (this.atCurrentUserType == null) ? '' : this.atCurrentUserType.path + '/';
+    return (this.userType == null) ? '' : this.userType.path + '/';
   }
 
   private getApiPath(): string {
     let constructedPath = '';
 
-    if (this.atOptions.apiBase != null) {
-      constructedPath += this.atOptions.apiBase + '/';
+    if (this.options.apiBase != null) {
+      constructedPath += this.options.apiBase + '/';
     }
 
-    if (this.atOptions.apiPath != null) {
-      constructedPath += this.atOptions.apiPath + '/';
+    if (this.options.apiPath != null) {
+      constructedPath += this.options.apiPath + '/';
     }
 
     return constructedPath;
@@ -342,7 +342,7 @@ export class AngularTokenService implements CanActivate {
   private getOAuthPath(oAuthType: string): string {
     let oAuthPath: string;
 
-    oAuthPath = this.atOptions.oAuthPaths[oAuthType];
+    oAuthPath = this.options.oAuthPaths[oAuthType];
 
     if (oAuthPath == null) {
       oAuthPath = `/auth/${oAuthType}`;
@@ -354,12 +354,12 @@ export class AngularTokenService implements CanActivate {
   private getOAuthUrl(oAuthPath: string, callbackUrl: string, windowType: string): string {
     let url: string;
 
-    url =   `${this.atOptions.oAuthBase}/${oAuthPath}`;
+    url =   `${this.options.oAuthBase}/${oAuthPath}`;
     url +=  `?omniauth_window_type=${windowType}`;
     url +=  `&auth_origin_url=${encodeURIComponent(callbackUrl)}`;
 
-    if (this.atCurrentUserType != null) {
-      url += `&resource_class=${this.atCurrentUserType.name}`;
+    if (this.userType != null) {
+      url += `&resource_class=${this.userType.name}`;
     }
 
     return url;
@@ -378,7 +378,7 @@ export class AngularTokenService implements CanActivate {
     const userType = this.getUserTypeByName(localStorage.getItem('userType'));
 
     if (userType) {
-      this.atCurrentUserType = userType;
+      this.userType = userType;
     }
 
     this.getAuthDataFromStorage();
@@ -387,7 +387,7 @@ export class AngularTokenService implements CanActivate {
       this.getAuthDataFromParams();
     }
 
-    // if (this.atCurrentAuthData) {
+    // if (this.authData) {
     //     this.validateToken();
     // }
   }
@@ -432,7 +432,7 @@ export class AngularTokenService implements CanActivate {
     };
 
     if (this.checkAuthData(authData)) {
-      this.atCurrentAuthData = authData;
+      this.authData = authData;
     }
   }
 
@@ -448,7 +448,7 @@ export class AngularTokenService implements CanActivate {
       };
 
       if (this.checkAuthData(authData)) {
-        this.atCurrentAuthData = authData;
+        this.authData = authData;
       }
     });
   }
@@ -463,7 +463,7 @@ export class AngularTokenService implements CanActivate {
   private setAuthData(authData: AuthData): void {
     if (this.checkAuthData(authData)) {
 
-      this.atCurrentAuthData = authData;
+      this.authData = authData;
 
       localStorage.setItem('accessToken', authData.accessToken);
       localStorage.setItem('client', authData.client);
@@ -471,8 +471,8 @@ export class AngularTokenService implements CanActivate {
       localStorage.setItem('tokenType', authData.tokenType);
       localStorage.setItem('uid', authData.uid);
 
-      if (this.atCurrentUserType != null) {
-        localStorage.setItem('userType', this.atCurrentUserType.name);
+      if (this.userType != null) {
+        localStorage.setItem('userType', this.userType.name);
       }
 
     }
@@ -495,8 +495,8 @@ export class AngularTokenService implements CanActivate {
       authData.tokenType != null &&
       authData.uid != null
     ) {
-      if (this.atCurrentAuthData != null) {
-        return authData.expiry >= this.atCurrentAuthData.expiry;
+      if (this.authData != null) {
+        return authData.expiry >= this.authData.expiry;
       } else {
         return true;
       }
@@ -550,11 +550,11 @@ export class AngularTokenService implements CanActivate {
 
   // Match user config by user config name
   private getUserTypeByName(name: string): UserType {
-    if (name == null || this.atOptions.userTypes == null) {
+    if (name == null || this.options.userTypes == null) {
       return null;
     }
 
-    return this.atOptions.userTypes.find(
+    return this.options.userTypes.find(
       userType => userType.name === name
     );
   }

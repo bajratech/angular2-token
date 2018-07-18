@@ -10,14 +10,14 @@ import { A2tResetPasswordComponent } from './a2t-reset-password/a2t-reset-passwo
 import { A2tUpdatePasswordComponent } from './a2t-update-password/a2t-update-password.component';
 
 const routes: Routes = [{
-        path: 'session',
+        path: 'auth',
         component: A2tUiComponent,
         children: [
-            { path: 'sign-in', component: A2tSignInComponent },
-            { path: 'sign-up', component: A2tSignUpComponent },
-            { path: 'reset-password', component: A2tResetPasswordComponent },
+            { path: 'login', component: A2tSignInComponent },
+            { path: 'sign_up', component: A2tSignUpComponent },
+            { path: 'reset_password', component: A2tResetPasswordComponent },
             {
-                path: 'update-password',
+                path: 'update_password',
                 component: A2tUpdatePasswordComponent,
                 canActivate: [Angular2TokenService]
             }

@@ -1,4 +1,5 @@
 # Compiled files
+dist
 *.js
 *.map
 *.d.ts
